@@ -456,7 +456,9 @@ body {
 .alert-info {
     background: #dbeafe;
     color: #1e40af;
-    border-left: 4px solid #3b82f6;
+    border-left: 4px solid #3
+
+b82f6;
 }
 
 .alert-warning {
@@ -503,6 +505,7 @@ body {
     background: white;
     padding: 8px;
     border-radius: 4px;
+Proc. File: favicon.ico
     font-family: monospace;
     border: 1px solid #d1d5db;
     font-size: 0.875rem;
