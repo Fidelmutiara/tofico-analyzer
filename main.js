@@ -1,4 +1,3 @@
-// Data Storage
 let locations = [
     {
         id: 1,
@@ -57,7 +56,7 @@ let editingLocationId = null;
 let editingCriteriaId = null;
 
 // Tab Management
-function showTab(tabName) {
+function showTab(tabName, event = null) {
     // Hide all tabs
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.classList.remove('active');
@@ -67,8 +66,19 @@ function showTab(tabName) {
     });
 
     // Show selected tab
-    document.getElementById(tabName).classList.add('active');
-    event.target.classList.add('active');
+    const tab = document.getElementById(tabName);
+    if (tab) {
+        tab.classList.add('active');
+        // If event is provided, activate the clicked button; otherwise, find by onclick
+        if (event && event.target) {
+            event.target.classList.add('active');
+        } else {
+            const button = document.querySelector(`.tab-button[onclick="showTab('${tabName}')"]`);
+            if (button) {
+                button.classList.add('active');
+            }
+        }
+    }
 
     // Refresh content based on tab
     switch(tabName) {
@@ -108,7 +118,7 @@ function calculateSAW() {
             if (criterion.type === "benefit") {
                 normalizedMatrix[location.id][criterion.id] = maxValue > 0 ? value / maxValue : 0;
             } else {
-                normalizedMatrix[location.id][criterion.id] = minValue > 0 ? minValue / value : 0;
+                normalizedMatrix[location.id][criterion.id] = minValue > 0 && value > 0 ? minValue / value : 0;
             }
         });
     });
@@ -116,7 +126,7 @@ function calculateSAW() {
     // Step 2: Calculate weighted scores
     const results = locations.map(location => {
         const score = criteria.reduce((sum, criterion) => {
-            return sum + criterion.weight * normalizedMatrix[location.id][criterion.id];
+            return sum + criterion.weight * (normalizedMatrix[location.id][criterion.id] || 0);
         }, 0);
 
         return {
@@ -138,6 +148,7 @@ function calculateWP() {
         let s = 1;
         criteria.forEach(criterion => {
             const value = location.criteria[criterion.id] || 0;
+            if (value === 0) return; // Skip if value is 0 to avoid Math.pow issues
             const weight = criterion.type === "cost" ? -criterion.weight : criterion.weight;
             s *= Math.pow(value, weight);
         });
@@ -166,37 +177,41 @@ function renderResults() {
 
     // Render SAW Results
     const sawContainer = document.getElementById('saw-results');
-    sawContainer.innerHTML = sawResults.map((result, index) => `
-        <div class="result-card ${getRankClass(index + 1)}">
-            <div class="result-header">
-                <div class="result-name">
-                    <div class="rank-icon">${getRankIcon(index + 1)}</div>
-                    <span style="font-weight: 600;">${result.location}</span>
+    if (sawContainer) {
+        sawContainer.innerHTML = sawResults.map((result, index) => `
+            <div class="result-card ${getRankClass(index + 1)}">
+                <div class="result-header">
+                    <div class="result-name">
+                        <div class="rank-icon">${getRankIcon(index + 1)}</div>
+                        <span style="font-weight: 600;">${result.location}</span>
+                    </div>
+                    <span class="badge badge-primary">${result.score.toFixed(4)}</span>
                 </div>
-                <span class="badge badge-primary">${result.score.toFixed(4)}</span>
+                <div class="progress">
+                    <div class="progress-bar" style="width: ${result.score * 100}%"></div>
+                </div>
             </div>
-            <div class="progress">
-                <div class="progress-bar" style="width: ${result.score * 100}%"></div>
-            </div>
-        </div>
-    `).join('');
+        `).join('');
+    }
 
     // Render WP Results
     const wpContainer = document.getElementById('wp-results');
-    wpContainer.innerHTML = wpResults.map((result, index) => `
-        <div class="result-card ${getRankClass(index + 1)}">
-            <div class="result-header">
-                <div class="result-name">
-                    <div class="rank-icon">${getRankIcon(index + 1)}</div>
-                    <span style="font-weight: 600;">${result.location}</span>
+    if (wpContainer) {
+        wpContainer.innerHTML = wpResults.map((result, index) => `
+            <div class="result-card ${getRankClass(index + 1)}">
+                <div class="result-header">
+                    <div class="result-name">
+                        <div class="rank-icon">${getRankIcon(index + 1)}</div>
+                        <span style="font-weight: 600;">${result.location}</span>
+                    </div>
+                    <span class="badge badge-primary">${result.score.toFixed(4)}</span>
                 </div>
-                <span class="badge badge-primary">${result.score.toFixed(4)}</span>
+                <div class="progress">
+                    <div class="progress-bar" style="width: ${result.score * 100}%"></div>
+                </div>
             </div>
-            <div class="progress">
-                <div class="progress-bar" style="width: ${result.score * 100}%"></div>
-            </div>
-        </div>
-    `).join('');
+        `).join('');
+    }
 
     // Render Comparison Table
     renderComparisonTable(sawResults, wpResults);
@@ -207,53 +222,55 @@ function renderResults() {
 
 function renderComparisonTable(sawResults, wpResults) {
     const comparisonContainer = document.getElementById('comparison-table');
-    comparisonContainer.innerHTML = `
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Lokasi</th>
-                    <th style="text-align: center;">Ranking SAW</th>
-                    <th style="text-align: center;">Skor SAW</th>
-                    <th style="text-align: center;">Ranking WP</th>
-                    <th style="text-align: center;">Skor WP</th>
-                    <th style="text-align: center;">Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${locations.map(location => {
-                    const sawRank = sawResults.findIndex(r => r.location === location.name) + 1;
-                    const wpRank = wpResults.findIndex(r => r.location === location.name) + 1;
-                    const sawScore = sawResults.find(r => r.location === location.name)?.score || 0;
-                    const wpScore = wpResults.find(r => r.location === location.name)?.score || 0;
-                    const isConsistent = Math.abs(sawRank - wpRank) <= 1;
+    if (comparisonContainer) {
+        comparisonContainer.innerHTML = `
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Lokasi</th>
+                        <th style="text-align: center;">Ranking SAW</th>
+                        <th style="text-align: center;">Skor SAW</th>
+                        <th style="text-align: center;">Ranking WP</th>
+                        <th style="text-align: center;">Skor WP</th>
+                        <th style="text-align: center;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${locations.map(location => {
+                        const sawRank = sawResults.findIndex(r => r.location === location.name) + 1;
+                        const wpRank = wpResults.findIndex(r => r.location === location.name) + 1;
+                        const sawScore = sawResults.find(r => r.location === location.name)?.score || 0;
+                        const wpScore = wpResults.find(r => r.location === location.name)?.score || 0;
+                        const isConsistent = Math.abs(sawRank - wpRank) <= 1;
 
-                    return `
-                        <tr>
-                            <td style="font-weight: 500;">${location.name}</td>
-                            <td style="text-align: center;">
-                                <span class="badge ${getRankBadgeClass(sawRank)}">#${sawRank}</span>
-                            </td>
-                            <td style="text-align: center;">${sawScore.toFixed(4)}</td>
-                            <td style="text-align: center;">
-                                <span class="badge ${getRankBadgeClass(wpRank)}">#${wpRank}</span>
-                            </td>
-                            <td style="text-align: center;">${wpScore.toFixed(4)}</td>
-                            <td style="text-align: center;">
-                                <span class="badge ${isConsistent ? 'badge-success' : 'badge-danger'}">
-                                    ${isConsistent ? 'Konsisten' : 'Berbeda'}
-                                </span>
-                            </td>
-                        </tr>
-                    `;
-                }).join('')}
-            </tbody>
-        </table>
-    `;
+                        return `
+                            <tr>
+                                <td style="font-weight: 500;">${location.name}</td>
+                                <td style="text-align: center;">
+                                    <span class="badge ${getRankBadgeClass(sawRank)}">#${sawRank}</span>
+                                </td>
+                                <td style="text-align: center;">${sawScore.toFixed(4)}</td>
+                                <td style="text-align: center;">
+                                    <span class="badge ${getRankBadgeClass(wpRank)}">#${wpRank}</span>
+                                </td>
+                                <td style="text-align: center;">${wpScore.toFixed(4)}</td>
+                                <td style="text-align: center;">
+                                    <span class="badge ${isConsistent ? 'badge-success' : 'badge-danger'}">
+                                        ${isConsistent ? 'Konsisten' : 'Berbeda'}
+                                    </span>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        `;
+    }
 }
 
 function renderRecommendation(sawResults, wpResults) {
     const recommendationContainer = document.getElementById('recommendation');
-    if (sawResults.length > 0 && wpResults.length > 0) {
+    if (recommendationContainer && sawResults.length > 0 && wpResults.length > 0) {
         recommendationContainer.innerHTML = `
             <div style="background: #dcfce7; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
                 <h3 style="font-weight: 600; color: #166534; margin-bottom: 8px;">🏆 Lokasi Terbaik: ${sawResults[0].location}</h3>
@@ -290,148 +307,157 @@ function renderRecommendation(sawResults, wpResults) {
 
 function renderLocations() {
     const container = document.getElementById('locations-list');
-    container.innerHTML = locations.map(location => `
-        <div class="card location-card">
-            <div class="card-content">
-                <div class="location-header">
-                    <div class="location-info">
-                        <h3>${location.name}</h3>
-                        <p>📍 ${location.address}</p>
-                        <div class="coordinates">
-                            <span>Lat: ${location.latitude}</span>
-                            <span>Lng: ${location.longitude}</span>
+    if (container) {
+        container.innerHTML = locations.map(location => `
+            <div class="card location-card">
+                <div class="card-content">
+                    <div class="location-header">
+                        <div class="location-info">
+                            <h3>${location.name}</h3>
+                            <p>📍 ${location.address}</p>
+                            <div class="coordinates">
+                                <span>Lat: ${location.latitude}</span>
+                                <span>Lng: ${location.longitude}</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="button button-secondary button-sm" onclick="editLocation(${location.id})">✏️</button>
+                            <button class="button button-danger button-sm" onclick="deleteLocation(${location.id})">🗑️</button>
                         </div>
                     </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button class="button button-secondary button-sm" onclick="editLocation(${location.id})">✏️</button>
-                        <button class="button button-danger button-sm" onclick="deleteLocation(${location.id})">🗑️</button>
+                    <div class="criteria-grid">
+                        ${criteria.map(criterion => `
+                            <div class="criteria-item">
+                                <span>${criterion.name}:</span>
+                                <span>${location.criteria[criterion.id] || 0}</span>
+                            </div>
+                        `).join('')}
                     </div>
-                </div>
-                <div class="criteria-grid">
-                    ${criteria.map(criterion => `
-                        <div class="criteria-item">
-                            <span>${criterion.name}:</span>
-                            <span>${location.criteria[criterion.id] || 0}</span>
-                        </div>
-                    `).join('')}
                 </div>
             </div>
-        </div>
-    `).join('');
+        `).join('');
+    }
 }
 
 function renderMap() {
     const container = document.getElementById('map-locations');
-    container.innerHTML = locations.map(location => `
-        <div class="card location-card">
-            <div class="card-content">
-                <div class="location-header">
-                    <div class="location-info">
-                        <h3>${location.name}</h3>
-                        <p>📍 ${location.address}</p>
-                        <div class="coordinates">
-                            <span>📍 ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}</span>
+    if (container) {
+        container.innerHTML = locations.map(location => `
+            <div class="card location-card">
+                <div class="card-content">
+                    <div class="location-header">
+                        <div class="location-info">
+                            <h3>${location.name}</h3>
+                            <p>📍 ${location.address}</p>
+                            <div class="coordinates">
+                                <span>📍 ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <button class="button button-secondary button-sm" onclick="openInGoogleMaps(${location.latitude}, ${location.longitude}, '${location.name}')">
+                                🗺️ Google Maps
+                            </button>
+                            <button class="button button-secondary button-sm" onclick="openInStreetView(${location.latitude}, ${location.longitude})">
+                                👁️ Street View
+                            </button>
                         </div>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <button class="button button-secondary button-sm" onclick="openInGoogleMaps(${location.latitude}, ${location.longitude}, '${location.name}')">
-                            🗺️ Google Maps
-                        </button>
-                        <button class="button button-secondary button-sm" onclick="openInStreetView(${location.latitude}, ${location.longitude})">
-                            👁️ Street View
-                        </button>
-                    </div>
-                </div>
-                
-                <div style="margin-top: 16px; padding: 12px; background: #f9fafb; border-radius: 8px;">
-                    <h4 style="font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 8px;">Informasi Lokasi:</h4>
-                    <div class="grid grid-cols-2">
-                        <div>
-                            <span style="color: #6b7280; font-size: 0.875rem;">Koordinat:</span><br>
-                            <code style="font-size: 0.75rem; background: white; padding: 4px 8px; border-radius: 4px;">
-                                ${location.latitude}, ${location.longitude}
-                            </code>
-                        </div>
-                        <div>
-                            <span style="color: #6b7280; font-size: 0.875rem;">Format DMS:</span><br>
-                            <code style="font-size: 0.75rem; background: white; padding: 4px 8px; border-radius: 4px;">
-                                ${Math.abs(location.latitude).toFixed(4)}°${location.latitude >= 0 ? 'N' : 'S'}, 
-                                ${Math.abs(location.longitude).toFixed(4)}°${location.longitude >= 0 ? 'E' : 'W'}
-                            </code>
+                    
+                    <div style="margin-top: 16px; padding: 12px; background: #f9fafb; border-radius: 8px;">
+                        <h4 style="font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 8px;">Informasi Lokasi:</h4>
+                        <div class="grid grid-cols-2">
+                            <div>
+                                <span style="color: #6b7280; font-size: 0.875rem;">Koordinat:</span><br>
+                                <code style="font-size: 0.75rem; background: white; padding: 4px 8px; border-radius: 4px;">
+                                    ${location.latitude}, ${location.longitude}
+                                </code>
+                            </div>
+                            <div>
+                                <span style="color: #6b7280; font-size: 0.875rem;">Format DMS:</span><br>
+                                <code style="font-size: 0.75rem; background: white; padding: 4px 8px; border-radius: 4px;">
+                                    ${Math.abs(location.latitude).toFixed(4)}°${location.latitude >= 0 ? 'N' : 'S'}, 
+                                    ${Math.abs(location.longitude).toFixed(4)}°${location.longitude >= 0 ? 'E' : 'W'}
+                                </code>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    `).join('');
+        `).join('');
 
-    // Add statistics
-    container.innerHTML += `
-        <div class="card">
-            <div class="card-header">
-                <div class="card-title">📊 Statistik Lokasi</div>
-            </div>
-            <div class="card-content">
-                <div class="grid" style="grid-template-columns: repeat(4, 1fr);">
-                    <div style="text-align: center; padding: 12px; background: #dbeafe; border-radius: 8px;">
-                        <div style="font-size: 2rem; font-weight: bold; color: #1e40af;">${locations.length}</div>
-                        <div style="color: #1e40af;">Total Lokasi</div>
-                    </div>
-                    <div style="text-align: center; padding: 12px; background: #dcfce7; border-radius: 8px;">
-                        <div style="font-size: 2rem; font-weight: bold; color: #166534;">
-                            ${locations.filter(l => l.latitude !== 0 && l.longitude !== 0).length}
+        // Add statistics
+        container.innerHTML += `
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">📊 Statistik Lokasi</div>
+                </div>
+                <div class="card-content">
+                    <div class="grid" style="grid-template-columns: repeat(4, 1fr);">
+                        <div style="text-align: center; padding: 12px; background: #dbeafe; border-radius: 8px;">
+                            <div style="font-size: 2rem; font-weight: bold; color: #1e40af;">${locations.length}</div>
+                            <div style="color: #1e40af;">Total Lokasi</div>
                         </div>
-                        <div style="color: #166534;">Dengan Koordinat</div>
-                    </div>
-                    <div style="text-align: center; padding: 12px; background: #f3e8ff; border-radius: 8px;">
-                        <div style="font-size: 2rem; font-weight: bold; color: #7c3aed;">
-                            ${locations.filter(l => l.address && l.address.trim() !== "").length}
+                        <div style="text-align: center; padding: 12px; background: #dcfce7; border-radius: 8px;">
+                            <div style="font-size: 2rem; font-weight: bold; color: #166534;">
+                                ${locations.filter(l => l.latitude !== 0 && l.longitude !== 0).length}
+                            </div>
+                            <div style="color: #166534;">Dengan Koordinat</div>
                         </div>
-                        <div style="color: #7c3aed;">Dengan Alamat</div>
-                    </div>
-                    <div style="text-align: center; padding: 12px; background: #fed7aa; border-radius: 8px;">
-                        <div style="font-size: 2rem; font-weight: bold; color: #ea580c;">
-                            ${Math.round(locations.reduce((sum, l) => sum + Object.keys(l.criteria).length, 0) / locations.length)}
+                        <div style="text-align: center; padding: 12px; background: #f3e8ff; border-radius: 8px;">
+                            <div style="font-size: 2rem; font-weight: bold; color: #7c3aed;">
+                                ${locations.filter(l => l.address && l.address.trim() !== "").length}
+                            </div>
+                            <div style="color: #7c3aed;">Dengan Alamat</div>
                         </div>
-                        <div style="color: #ea580c;">Rata-rata Kriteria</div>
+                        <div style="text-align: center; padding: 12px; background: #fed7aa; border-radius: 8px;">
+                            <div style="font-size: 2rem; font-weight: bold; color: #ea580c;">
+                                ${locations.length > 0 ? Math.round(locations.reduce((sum, l) => sum + Object.keys(l.criteria).length, 0) / locations.length) : 0}
+                            </div>
+                            <div style="color: #ea580c;">Rata-rata Kriteria</div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    `;
+        `;
+    }
 }
 
 function renderCriteria() {
     const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
-    document.getElementById('total-weight-display').innerHTML = `
-        <span style="color: ${totalWeight === 1 ? '#166534' : '#dc2626'};">
-            Total Bobot: ${totalWeight.toFixed(3)} ${totalWeight !== 1 ? '(Harus = 1.000)' : ''}
-        </span>
-    `;
+    const totalWeightDisplay = document.getElementById('total-weight-display');
+    if (totalWeightDisplay) {
+        totalWeightDisplay.innerHTML = `
+            <span style="color: ${totalWeight === 1 ? '#166534' : '#dc2626'};">
+                Total Bobot: ${totalWeight.toFixed(3)} ${totalWeight !== 1 ? '(Harus = 1.000)' : ''}
+            </span>
+        `;
+    }
 
     const container = document.getElementById('criteria-list');
-    container.innerHTML = criteria.map(criterion => `
-        <div class="card" style="border-left: 4px solid #22c55e;">
-            <div class="card-content">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="flex: 1;">
-                        <h3 style="font-size: 1.125rem; font-weight: 600;">${criterion.name}</h3>
-                        <div style="display: flex; gap: 16px; font-size: 0.875rem; color: #6b7280; margin-top: 8px;">
-                            <span>ID: ${criterion.id}</span>
-                            <span>Bobot: ${criterion.weight}</span>
-                            <span class="badge ${criterion.type === 'benefit' ? 'badge-success' : 'badge-danger'}">
-                                ${criterion.type === 'benefit' ? 'Benefit' : 'Cost'}
-                            </span>
+    if (container) {
+        container.innerHTML = criteria.map(criterion => `
+            <div class="card" style="border-left: 4px solid #22c55e;">
+                <div class="card-content">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="flex: 1;">
+                            <h3 style="font-size: 1.125rem; font-weight: 600;">${criterion.name}</h3>
+                            <div style="display: flex; gap: 16px; font-size: 0.875rem; color: #6b7280; margin-top: 8px;">
+                                <span>ID: ${criterion.id}</span>
+                                <span>Bobot: ${criterion.weight}</span>
+                                <span class="badge ${criterion.type === 'benefit' ? 'badge-success' : 'badge-danger'}">
+                                    ${criterion.type === 'benefit' ? 'Benefit' : 'Cost'}
+                                </span>
+                            </div>
                         </div>
-                    </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button class="button button-secondary button-sm" onclick="editCriteria('${criterion.id}')">✏️</button>
-                        <button class="button button-danger button-sm" onclick="deleteCriteria('${criterion.id}')">🗑️</button>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="button button-secondary button-sm" onclick="editCriteria('${criterion.id}')">✏️</button>
+                            <button class="button button-danger button-sm" onclick="deleteCriteria('${criterion.id}')">🗑️</button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    `).join('');
+        `).join('');
+    }
 }
 
 // Helper Functions
@@ -464,29 +490,36 @@ function getRankBadgeClass(rank) {
 
 // Modal Functions
 function openAddLocationModal() {
-    // Generate criteria inputs
     const criteriaInputs = document.getElementById('criteria-inputs');
-    criteriaInputs.innerHTML = criteria.map(criterion => `
-        <div class="form-group">
-            <label class="label">${criterion.name} (0-100)</label>
-            <input type="number" id="criteria-${criterion.id}" class="input" min="0" max="100" placeholder="0-100" required>
-        </div>
-    `).join('');
-
-    document.getElementById('add-location-modal').classList.add('active');
+    if (criteriaInputs) {
+        criteriaInputs.innerHTML = criteria.map(criterion => `
+            <div class="form-group">
+                <label class="label">${criterion.name} (0-100)</label>
+                <input type="number" id="criteria-${criterion.id}" class="input" min="0" max="100" placeholder="0-100" required>
+            </div>
+        `).join('');
+    }
+    const modal = document.getElementById('add-location-modal');
+    if (modal) {
+        modal.classList.add('active');
+    }
 }
 
 function openAddCriteriaModal() {
-    document.getElementById('add-criteria-modal').classList.add('active');
+    const modal = document.getElementById('add-criteria-modal');
+    if (modal) {
+        modal.classList.add('active');
+    }
 }
 
 function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
-    // Reset forms
     const modal = document.getElementById(modalId);
-    const form = modal.querySelector('form');
-    if (form) {
-        form.reset();
+    if (modal) {
+        modal.classList.remove('active');
+        const form = modal.querySelector('form');
+        if (form) {
+            form.reset();
+        }
     }
     editingLocationId = null;
     editingCriteriaId = null;
@@ -499,23 +532,31 @@ function editLocation(id) {
 
     editingLocationId = id;
 
-    // Populate form
-    document.getElementById('edit-location-name').value = location.name;
-    document.getElementById('edit-location-address').value = location.address;
-    document.getElementById('edit-location-latitude').value = location.latitude;
-    document.getElementById('edit-location-longitude').value = location.longitude;
-
-    // Generate criteria inputs
+    const nameInput = document.getElementById('edit-location-name');
+    const addressInput = document.getElementById('edit-location-address');
+    const latitudeInput = document.getElementById('edit-location-latitude');
+    const longitudeInput = document.getElementById('edit-location-longitude');
     const criteriaInputs = document.getElementById('edit-criteria-inputs');
-    criteriaInputs.innerHTML = criteria.map(criterion => `
-        <div class="form-group">
-            <label class="label">${criterion.name} (0-100)</label>
-            <input type="number" id="edit-criteria-${criterion.id}" class="input" min="0" max="100" 
-                   value="${location.criteria[criterion.id] || 0}" required>
-        </div>
-    `).join('');
 
-    document.getElementById('edit-location-modal').classList.add('active');
+    if (nameInput) nameInput.value = location.name;
+    if (addressInput) addressInput.value = location.address;
+    if (latitudeInput) latitudeInput.value = location.latitude;
+    if (longitudeInput) longitudeInput.value = location.longitude;
+
+    if (criteriaInputs) {
+        criteriaInputs.innerHTML = criteria.map(criterion => `
+            <div class="form-group">
+                <label class="label">${criterion.name} (0-100)</label>
+                <input type="number" id="edit-criteria-${criterion.id}" class="input" min="0" max="100" 
+                       value="${location.criteria[criterion.id] || 0}" required>
+            </div>
+        `).join('');
+    }
+
+    const modal = document.getElementById('edit-location-modal');
+    if (modal) {
+        modal.classList.add('active');
+    }
 }
 
 function deleteLocation(id) {
@@ -533,24 +574,28 @@ function editCriteria(id) {
 
     editingCriteriaId = id;
 
-    // Populate form
-    document.getElementById('edit-criteria-id').value = criterion.id;
-    document.getElementById('edit-criteria-name').value = criterion.name;
-    document.getElementById('edit-criteria-weight').value = criterion.weight;
-    document.getElementById('edit-criteria-type').value = criterion.type;
+    const idInput = document.getElementById('edit-criteria-id');
+    const nameInput = document.getElementById('edit-criteria-name');
+    const weightInput = document.getElementById('edit-criteria-weight');
+    const typeInput = document.getElementById('edit-criteria-type');
 
-    document.getElementById('edit-criteria-modal').classList.add('active');
+    if (idInput) idInput.value = criterion.id;
+    if (nameInput) nameInput.value = criterion.name;
+    if (weightInput) weightInput.value = criterion.weight;
+    if (typeInput) typeInput.value = criterion.type;
+
+    const modal = document.getElementById('edit-criteria-modal');
+    if (modal) {
+        modal.classList.add('active');
+    }
 }
 
 function deleteCriteria(id) {
     if (confirm('Apakah Anda yakin ingin menghapus kriteria ini?')) {
         criteria = criteria.filter(c => c.id !== id);
-        
-        // Remove this criteria from all locations
         locations.forEach(location => {
             delete location.criteria[id];
         });
-
         renderCriteria();
         saveData();
     }
@@ -569,13 +614,15 @@ function normalizeWeights() {
 
 // Coordinate Helper
 function searchCoordinates() {
-    const address = document.getElementById('search-address').value.trim();
+    const addressInput = document.getElementById('search-address');
+    if (!addressInput) return;
+
+    const address = addressInput.value.trim();
     if (!address) {
         alert('Masukkan alamat yang akan dicari');
         return;
     }
 
-    // Sample coordinates for demo
     const sampleCoordinates = [
         { address: "jakarta", lat: -6.2088, lng: 106.8456 },
         { address: "bandung", lat: -6.9175, lng: 107.6191 },
@@ -594,22 +641,27 @@ function searchCoordinates() {
     if (found) {
         currentCoordinates = { lat: found.lat, lng: found.lng };
     } else {
-        // Random coordinates for demo
         currentCoordinates = {
             lat: -6.2 + Math.random() * 2,
             lng: 106.8 + Math.random() * 2,
         };
     }
 
-    document.getElementById('result-latitude').textContent = currentCoordinates.lat.toFixed(6);
-    document.getElementById('result-longitude').textContent = currentCoordinates.lng.toFixed(6);
-    document.getElementById('coordinate-result').style.display = 'block';
+    const latitudeDisplay = document.getElementById('result-latitude');
+    const longitudeDisplay = document.getElementById('result-longitude');
+    const resultContainer = document.getElementById('coordinate-result');
+
+    if (latitudeDisplay) latitudeDisplay.textContent = currentCoordinates.lat.toFixed(6);
+    if (longitudeDisplay) longitudeDisplay.textContent = currentCoordinates.lng.toFixed(6);
+    if (resultContainer) resultContainer.style.display = 'block';
 }
 
 function copyCoordinates() {
     const coordText = `${currentCoordinates.lat}, ${currentCoordinates.lng}`;
     navigator.clipboard.writeText(coordText).then(() => {
         alert('Koordinat berhasil disalin ke clipboard');
+    }).catch(err => {
+        alert('Gagal menyalin koordinat: ' + err.message);
     });
 }
 
@@ -629,20 +681,20 @@ function openInStreetView(lat, lng) {
 }
 
 // Form Event Listeners
-document.getElementById('add-location-form').addEventListener('submit', function(e) {
+document.getElementById('add-location-form')?.addEventListener('submit', function(e) {
     e.preventDefault();
     
     const newLocation = {
         id: Date.now(),
-        name: document.getElementById('location-name').value,
-        address: document.getElementById('location-address').value,
-        latitude: parseFloat(document.getElementById('location-latitude').value),
-        longitude: parseFloat(document.getElementById('location-longitude').value),
+        name: document.getElementById('location-name')?.value || '',
+        address: document.getElementById('location-address')?.value || '',
+        latitude: parseFloat(document.getElementById('location-latitude')?.value) || 0,
+        longitude: parseFloat(document.getElementById('location-longitude')?.value) || 0,
         criteria: {}
     };
 
     criteria.forEach(criterion => {
-        newLocation.criteria[criterion.id] = parseFloat(document.getElementById(`criteria-${criterion.id}`).value) || 0;
+        newLocation.criteria[criterion.id] = parseFloat(document.getElementById(`criteria-${criterion.id}`)?.value) || 0;
     });
 
     locations.push(newLocation);
@@ -651,19 +703,19 @@ document.getElementById('add-location-form').addEventListener('submit', function
     saveData();
 });
 
-document.getElementById('edit-location-form').addEventListener('submit', function(e) {
+document.getElementById('edit-location-form')?.addEventListener('submit', function(e) {
     e.preventDefault();
     
     if (editingLocationId) {
         const locationIndex = locations.findIndex(loc => loc.id === editingLocationId);
         if (locationIndex !== -1) {
-            locations[locationIndex].name = document.getElementById('edit-location-name').value;
-            locations[locationIndex].address = document.getElementById('edit-location-address').value;
-            locations[locationIndex].latitude = parseFloat(document.getElementById('edit-location-latitude').value);
-            locations[locationIndex].longitude = parseFloat(document.getElementById('edit-location-longitude').value);
+            locations[locationIndex].name = document.getElementById('edit-location-name')?.value || '';
+            locations[locationIndex].address = document.getElementById('edit-location-address')?.value || '';
+            locations[locationIndex].latitude = parseFloat(document.getElementById('edit-location-latitude')?.value) || 0;
+            locations[locationIndex].longitude = parseFloat(document.getElementById('edit-location-longitude')?.value) || 0;
 
             criteria.forEach(criterion => {
-                locations[locationIndex].criteria[criterion.id] = parseFloat(document.getElementById(`edit-criteria-${criterion.id}`).value) || 0;
+                locations[locationIndex].criteria[criterion.id] = parseFloat(document.getElementById(`edit-criteria-${criterion.id}`)?.value) || 0;
             });
         }
     }
@@ -673,19 +725,18 @@ document.getElementById('edit-location-form').addEventListener('submit', functio
     saveData();
 });
 
-document.getElementById('add-criteria-form').addEventListener('submit', function(e) {
+document.getElementById('add-criteria-form')?.addEventListener('submit', function(e) {
     e.preventDefault();
     
     const newCriteria = {
-        id: document.getElementById('criteria-id').value,
-        name: document.getElementById('criteria-name').value,
-        weight: parseFloat(document.getElementById('criteria-weight').value),
-        type: document.getElementById('criteria-type').value
+        id: document.getElementById('criteria-id')?.value || '',
+        name: document.getElementById('criteria-name')?.value || '',
+        weight: parseFloat(document.getElementById('criteria-weight')?.value) || 0,
+        type: document.getElementById('criteria-type')?.value || 'benefit'
     };
 
     criteria.push(newCriteria);
     
-    // Add this criteria to all existing locations with default value 0
     locations.forEach(location => {
         location.criteria[newCriteria.id] = 0;
     });
@@ -695,21 +746,20 @@ document.getElementById('add-criteria-form').addEventListener('submit', function
     saveData();
 });
 
-document.getElementById('edit-criteria-form').addEventListener('submit', function(e) {
+document.getElementById('edit-criteria-form')?.addEventListener('submit', function(e) {
     e.preventDefault();
     
     if (editingCriteriaId) {
         const criteriaIndex = criteria.findIndex(c => c.id === editingCriteriaId);
         if (criteriaIndex !== -1) {
             const oldId = criteria[criteriaIndex].id;
-            const newId = document.getElementById('edit-criteria-id').value;
+            const newId = document.getElementById('edit-criteria-id')?.value || '';
             
             criteria[criteriaIndex].id = newId;
-            criteria[criteriaIndex].name = document.getElementById('edit-criteria-name').value;
-            criteria[criteriaIndex].weight = parseFloat(document.getElementById('edit-criteria-weight').value);
-            criteria[criteriaIndex].type = document.getElementById('edit-criteria-type').value;
+            criteria[criteriaIndex].name = document.getElementById('edit-criteria-name')?.value || '';
+            criteria[criteriaIndex].weight = parseFloat(document.getElementById('edit-criteria-weight')?.value) || 0;
+            criteria[criteriaIndex].type = document.getElementById('edit-criteria-type')?.value || 'benefit';
 
-            // Update criteria ID in all locations if it changed
             if (oldId !== newId) {
                 locations.forEach(location => {
                     if (location.criteria[oldId] !== undefined) {
@@ -728,20 +778,28 @@ document.getElementById('edit-criteria-form').addEventListener('submit', functio
 
 // Data Persistence
 function saveData() {
-    localStorage.setItem('tofico_locations', JSON.stringify(locations));
-    localStorage.setItem('tofico_criteria', JSON.stringify(criteria));
+    try {
+        localStorage.setItem('tofico_locations', JSON.stringify(locations));
+        localStorage.setItem('tofico_criteria', JSON.stringify(criteria));
+    } catch (error) {
+        console.error('Error saving data to localStorage:', error);
+    }
 }
 
 function loadData() {
-    const savedLocations = localStorage.getItem('tofico_locations');
-    const savedCriteria = localStorage.getItem('tofico_criteria');
-    
-    if (savedLocations) {
-        locations = JSON.parse(savedLocations);
-    }
-    
-    if (savedCriteria) {
-        criteria = JSON.parse(savedCriteria);
+    try {
+        const savedLocations = localStorage.getItem('tofico_locations');
+        const savedCriteria = localStorage.getItem('tofico_criteria');
+        
+        if (savedLocations) {
+            locations = JSON.parse(savedLocations);
+        }
+        
+        if (savedCriteria) {
+            criteria = JSON.parse(savedCriteria);
+        }
+    } catch (error) {
+        console.error('Error loading data from localStorage:', error);
     }
 }
 
@@ -757,7 +815,6 @@ document.querySelectorAll('.modal').forEach(modal => {
 // Keyboard shortcuts
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        // Close any open modal
         document.querySelectorAll('.modal.active').forEach(modal => {
             closeModal(modal.id);
         });
@@ -769,7 +826,6 @@ document.addEventListener('DOMContentLoaded', function() {
     loadData();
     renderResults();
     
-    // Set up tab navigation with keyboard
     document.querySelectorAll('.tab-button').forEach((button, index) => {
         button.addEventListener('keydown', function(e) {
             if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
@@ -790,7 +846,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Export/Import Functions (bonus features)
+// Export/Import Functions
 function exportData() {
     const data = {
         locations: locations,
@@ -836,6 +892,8 @@ function importData(event) {
 // Print functionality
 function printResults() {
     const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
     const sawResults = calculateSAW();
     const wpResults = calculateWP();
     
@@ -881,8 +939,12 @@ function printResults() {
             
             <div class="section">
                 <h3>Rekomendasi</h3>
-                <p><strong>Lokasi Terbaik: ${sawResults[0]?.location || 'N/A'}</strong></p>
-                <p>Berdasarkan analisis menggunakan algoritma SAW dan WP.</p>
+                <p><strong>Lokasi Terbaik:</strong> ${sawResults[0]?.location || 'Tidak ada data'}</p>
+                <p>Lokasi ini mendapat ranking tertinggi pada algoritma SAW${
+                    sawResults[0]?.location === wpResults[0]?.location
+                        ? ' dan WP, menunjukkan konsistensi hasil yang tinggi.'
+                        : `, dan ranking ${wpResults.findIndex(r => r.location === sawResults[0]?.location) + 1} pada algoritma WP.`
+                }</p>
             </div>
         </body>
         </html>
