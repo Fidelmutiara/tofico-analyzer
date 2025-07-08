@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Pendukung Keputusan - Penentuan Lokasi Tofico Syrup</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Sistem Pendukung Keputusan</h1>
+            <h2>Penentuan Lokasi Tofico Syrup</h2>
+            <p>Menggunakan algoritma SAW (Simple Additive Weighting) dan WP (Weighted Product) untuk menentukan lokasi terbaik berdasarkan kriteria yang telah ditentukan.</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab-list">
+                <button class="tab-button active" onclick="showTab('results')">
+                    📊 Hasil Analisis
+                </button>
+                <button class="tab-button" onclick="showTab('locations')">
+                    📍 Kelola Lokasi
+                </button>
+                <button class="tab-button" onclick="showTab('map')">
+                    🗺️ Peta Lokasi
+                </button>
+                <button class="tab-button" onclick="showTab('criteria')">
+                    ⚙️ Kelola Kriteria
+                </button>
+                <button class="tab-button" onclick="showTab('algorithms')">
+                    🧮 Detail Algoritma
+                </button>
+            </div>
+
+            <!-- Results Tab -->
+            <div id="results" class="tab-content active">
+                <div class="grid grid-cols-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                🏆 Hasil SAW (Simple Additive Weighting)
+                            </div>
+                            <div class="card-description">Ranking lokasi berdasarkan algoritma SAW</div>
+                        </div>
+                        <div class="card-content">
+                            <div id="saw-results"></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                🥈 Hasil WP (Weighted Product)
+                            </div>
+                            <div class="card-description">Ranking lokasi berdasarkan algoritma WP</div>
+                        </div>
+                        <div class="card-content">
+                            <div id="wp-results"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Perbandingan Hasil Algoritma</div>
+                        <div class="card-description">Tabel perbandingan ranking dari kedua algoritma</div>
+                    </div>
+                    <div class="card-content">
+                        <div id="comparison-table"></div>
+                    </div>
+                </div>
+
+                <div class="card alert-success">
+                    <div class="card-header">
+                        <div class="card-title">🏆 Rekomendasi Lokasi Terbaik</div>
+                        <div class="card-description">Berdasarkan analisis kedua algoritma</div>
+                    </div>
+                    <div class="card-content">
+                        <div id="recommendation"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Locations Tab -->
+            <div id="locations" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                            Kelola Lokasi Kandidat
+                            <button class="button button-primary" onclick="openAddLocationModal()">
+                                ➕ Tambah Lokasi
+                            </button>
+                        </div>
+                        <div class="card-description">Kelola daftar lokasi kandidat untuk penempatan Tofico Syrup</div>
+                    </div>
+                    <div class="card-content">
+                        <div id="locations-list"></div>
+                    </div>
+                </div>
+
+                <div class="coordinate-helper">
+                    <h3 style="margin-bottom: 16px;">🗺️ Helper Pencarian Koordinat</h3>
+                    <p style="margin-bottom: 16px; color: #6b7280;">Cari koordinat latitude dan longitude berdasarkan alamat</p>
+                    
+                    <div class="search-box">
+                        <input type="text" id="search-address" class="input" placeholder="Contoh: Jl. Sudirman Jakarta atau Mall Bandung">
+                        <button class="button button-primary" onclick="searchCoordinates()">🔍 Cari</button>
+                    </div>
+
+                    <div id="coordinate-result" class="coordinate-result" style="display: none;">
+                        <h4 style="margin-bottom: 12px; color: #166534;">Hasil Pencarian:</h4>
+                        <div class="coordinate-display">
+                            <div>
+                                <label class="label">Latitude</label>
+                                <div id="result-latitude" class="coordinate-value">0</div>
+                            </div>
+                            <div>
+                                <label class="label">Longitude</label>
+                                <div id="result-longitude" class="coordinate-value">0</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="button button-secondary button-sm" onclick="copyCoordinates()">📋 Salin Koordinat</button>
+                            <button class="button button-secondary button-sm" onclick="openInMaps()">🗺️ Buka di Maps</button>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info" style="margin-top: 16px;">
+                        <h4 style="margin-bottom: 8px;">💡 Tips Pencarian:</h4>
+                        <ul style="margin-left: 20px;">
+                            <li>Gunakan nama kota untuk koordinat pusat kota</li>
+                            <li>Sertakan nama jalan untuk lokasi yang lebih spesifik</li>
+                            <li>Gunakan nama landmark atau mall terkenal</li>
+                            <li>Format: "Nama Jalan, Kota" atau "Landmark Kota"</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Tab -->
+            <div id="map" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            🗺️ Peta Lokasi Kandidat
+                        </div>
+                        <div class="card-description">Visualisasi lokasi kandidat dengan koordinat dan alamat lengkap</div>
+                    </div>
+                    <div class="card-content">
+                        <div id="map-locations"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Criteria Tab -->
+            <div id="criteria" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                            Kelola Kriteria Penilaian
+                            <div style="display: flex; gap: 8px;">
+                                <button class="button button-secondary" onclick="normalizeWeights()">⚖️ Normalisasi Bobot</button>
+                                <button class="button button-primary" onclick="openAddCriteriaModal()">➕ Tambah Kriteria</button>
+                            </div>
+                        </div>
+                        <div class="card-description">
+                            Kelola kriteria yang digunakan untuk menilai lokasi kandidat<br>
+                            <span id="total-weight-display" style="font-weight: 500;"></span>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div id="criteria-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Algorithms Tab -->
+            <div id="algorithms" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Penjelasan Algoritma</div>
+                        <div class="card-description">Detail implementasi algoritma SAW dan WP</div>
+                    </div>
+                    <div class="card-content">
+                        <div style="margin-bottom: 24px;">
+                            <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 8px;">SAW (Simple Additive Weighting)</h3>
+                            <p style="color: #6b7280; margin-bottom: 8px;">
+                                Algoritma SAW menghitung nilai preferensi dengan menjumlahkan hasil perkalian rating kinerja setiap
+                                alternatif pada setiap atribut dengan bobot kepentingan atribut.
+                            </p>
+                            <div style="background: #f9fafb; padding: 16px; border-radius: 8px;">
+                                <code style="font-size: 0.875rem;">
+                                    Vi = Σ(wj × rij) dimana:<br>
+                                    Vi = Nilai preferensi alternatif i<br>
+                                    wj = Bobot kriteria j<br>
+                                    rij = Rating kinerja ternormalisasi
+                                </code>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 8px;">WP (Weighted Product)</h3>
+                            <p style="color: #6b7280; margin-bottom: 8px;">
+                                Algoritma WP menggunakan perkalian untuk menghubungkan rating atribut, dimana rating setiap atribut
+                                harus dipangkatkan dulu dengan bobot atribut yang bersangkutan.
+                            </p>
+                            <div style="background: #f9fafb; padding: 16px; border-radius: 8px;">
+                                <code style="font-size: 0.875rem;">
+                                    Si = Π(Xij^wj) dimana:<br>
+                                    Si = Skor alternatif i<br>
+                                    Xij = Nilai alternatif i pada kriteria j<br>
+                                    wj = Bobot kriteria j
+                                </code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Location Modal -->
+    <div id="add-location-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Tambah Lokasi Baru</div>
+                <div class="modal-description">Masukkan nama lokasi dan nilai untuk setiap kriteria</div>
+            </div>
+            <form id="add-location-form">
+                <div class="form-group">
+                    <label class="label">Nama Lokasi</label>
+                    <input type="text" id="location-name" class="input" placeholder="Masukkan nama lokasi" required>
+                </div>
+                <div class="form-group">
+                    <label class="label">Alamat Lengkap</label>
+                    <input type="text" id="location-address" class="input" placeholder="Masukkan alamat lengkap lokasi" required>
+                </div>
+                <div class="grid grid-cols-2">
+                    <div class="form-group">
+                        <label class="label">Latitude</label>
+                        <input type="number" id="location-latitude" class="input" step="0.000001" placeholder="-6.1944" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">Longitude</label>
+                        <input type="number" id="location-longitude" class="input" step="0.000001" placeholder="106.8229" required>
+                    </div>
+                </div>
+                <div id="criteria-inputs" class="grid grid-cols-2"></div>
+                <div style="display: flex; gap: 8px; margin-top: 16px;">
+                    <button type="submit" class="button button-primary" style="flex: 1;">Tambah Lokasi</button>
+                    <button type="button" class="button button-secondary" onclick="closeModal('add-location-modal')">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Criteria Modal -->
+    <div id="add-criteria-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Tambah Kriteria Baru</div>
+                <div class="modal-description">Masukkan detail kriteria penilaian baru</div>
+            </div>
+            <form id="add-criteria-form">
+                <div class="form-group">
+                    <label class="label">ID Kriteria</label>
+                    <input type="text" id="criteria-id" class="input" placeholder="contoh: transportation" required>
+                </div>
+                <div class="form-group">
+                    <label class="label">Nama Kriteria</label>
+                    <input type="text" id="criteria-name" class="input" placeholder="contoh: Transportasi" required>
+                </div>
+                <div class="form-group">
+                    <label class="label">Bobot (0-1)</label>
+                    <input type="number" id="criteria-weight" class="input" step="0.01" min="0" max="1" placeholder="0.25" required>
+                </div>
+                <div class="form-group">
+                    <label class="label">Tipe Kriteria</label>
+                    <select id="criteria-type" class="input" required>
+                        <option value="benefit">Benefit (Semakin tinggi semakin baik)</option>
+                        <option value="cost">Cost (Semakin rendah semakin baik)</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 16px;">
+                    <button type="submit" class="button button-primary" style="flex: 1;">Tambah Kriteria</button>
+                    <button type="button" class="button button-secondary" onclick="closeModal('add-criteria-modal')">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Location Modal -->
+    <div id="edit-location-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Edit Lokasi</div>
+                <div class="modal-description">Ubah nama lokasi dan nilai kriteria</div>
+            </div>
+            <form id="edit-location-form">
+                <div class="form-group">
+                    <label class="label">Nama Lokasi</label>
+                    <input type="text" id="edit-location-name" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label class="label">Alamat Lengkap</label>
+                    <input type="text" id="edit-location-address" class="input" required>
+                </div>
+                <div class="grid grid-cols-2">
+                    <div class="form-group">
+                        <label class="label">Latitude</label>
+                        <input type="number" id="edit-location-latitude" class="input" step="0.000001" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">Longitude</label>
+                        <input type="number" id="edit-location-longitude" class="input" step="0.000001" required>
+                    </div>
+                </div>
+                <div id="edit-criteria-inputs" class="grid grid-cols-2"></div>
+                <div style="display: flex; gap: 8px; margin-top: 16px;">
+                    <button type="submit" class="button button-primary" style="flex: 1;">Simpan Perubahan</button>
+                    <button type="button" class="button button-secondary" onclick="closeModal('edit-location-modal')">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Criteria Modal -->
+    <div id="edit-criteria-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Edit Kriteria</div>
+                <div class="modal-description">Ubah detail kriteria penilaian</div>
+            </div>
+            <form id="edit-criteria-form">
+                <div class="form-group">
+                    <label class="label">ID Kriteria</label>
+                    <input type="text" id="edit-criteria-id" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label class="label">Nama Kriteria</label>
+                    <input type="text" id="edit-criteria-name" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label class="label">Bobot (0-1)</label>
+                    <input type="number" id="edit-criteria-weight" class="input" step="0.01" min="0" max="1" required>
+                </div>
+                <div class="form-group">
+                    <label class="label">Tipe Kriteria</label>
+                    <select id="edit-criteria-type" class="input" required>
+                        <option value="benefit">Benefit (Semakin tinggi semakin baik)</option>
+                        <option value="cost">Cost (Semakin rendah semakin baik)</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 16px;">
+                    <button type="submit" class="button button-primary" style="flex: 1;">Simpan Perubahan</button>
+                    <button type="button" class="button button-secondary" onclick="closeModal('edit-criteria-modal')">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
