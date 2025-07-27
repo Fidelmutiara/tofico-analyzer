@@ -1,7 +1,8 @@
 // ===== KONFIGURASI API =====
-// Ganti URL ini dengan ngrok URL Anda
-const API_BASE_URL = "https://bd92e234b65d.ngrok-free.app"
+// Ganti URL ini dengan ngrok URL Anda (TANPA trailing slash)
+const API_BASE_URL = "https://f04a6ab0d50b.ngrok-free.app"
 // Contoh: const API_BASE_URL = "https://abc123.ngrok-free.app";
+// PENTING: Pastikan tidak ada "/" di akhir URL
 
 // ===== GLOBAL VARIABLES =====
 let locations = []
@@ -17,6 +18,7 @@ async function apiCall(endpoint, method = "GET", data = null) {
       method: method,
       headers: {
         "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true", // Skip ngrok browser warning
       },
     }
 
@@ -24,7 +26,14 @@ async function apiCall(endpoint, method = "GET", data = null) {
       config.body = JSON.stringify(data)
     }
 
+    console.log(`Making API call: ${method} ${API_BASE_URL}${endpoint}`)
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config)
+
+    // Check if response is HTML (error page)
+    const contentType = response.headers.get("content-type")
+    if (contentType && contentType.includes("text/html")) {
+      throw new Error(`Server returned HTML instead of JSON. Check if API is running and ngrok URL is correct.`)
+    }
 
     if (!response.ok) {
       const errorData = await response.json()
@@ -35,8 +44,15 @@ async function apiCall(endpoint, method = "GET", data = null) {
   } catch (error) {
     console.error(`API Error (${method} ${endpoint}):`, error)
 
-    // Fallback ke localStorage jika API tidak tersedia
+    // Show user-friendly error message
     if (error.message.includes("fetch")) {
+      showNotification("❌ Tidak dapat terhubung ke server. Pastikan backend dan ngrok berjalan.", "error")
+    } else if (error.message.includes("HTML")) {
+      showNotification("❌ Server error. Periksa konfigurasi ngrok dan backend.", "error")
+    }
+
+    // Fallback ke localStorage jika API tidak tersedia
+    if (error.message.includes("fetch") || error.message.includes("HTML")) {
       console.warn("API tidak tersedia, menggunakan localStorage sebagai fallback")
       return handleOfflineMode(endpoint, method, data)
     }
