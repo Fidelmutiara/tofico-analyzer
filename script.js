@@ -1,6 +1,6 @@
 // ===== KONFIGURASI API =====
 // Ganti URL ini dengan ngrok URL Anda
-const API_BASE_URL = "https://07b2f7ab4ebd.ngrok-free.app"
+const API_BASE_URL = "https://bd92e234b65d.ngrok-free.app"
 // Contoh: const API_BASE_URL = "https://abc123.ngrok-free.app";
 
 // ===== GLOBAL VARIABLES =====
