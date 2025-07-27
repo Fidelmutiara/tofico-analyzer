@@ -48,7 +48,6 @@
                             <div id="saw-results"></div>
                         </div>
                     </div>
-
                     <div class="card">
                         <div class="card-header">
                             <div class="card-title">
@@ -61,7 +60,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">Perbandingan Hasil Algoritma</div>
@@ -71,7 +69,6 @@
                         <div id="comparison-table"></div>
                     </div>
                 </div>
-
                 <div class="card alert-success">
                     <div class="card-header">
                         <div class="card-title">🏆 Rekomendasi Lokasi Terbaik</div>
@@ -99,7 +96,6 @@
                         <div id="locations-list"></div>
                     </div>
                 </div>
-
                 <div class="coordinate-helper">
                     <h3 style="margin-bottom: 16px;">🗺️ Helper Pencarian Koordinat</h3>
                     <p style="margin-bottom: 16px; color: #6b7280;">Cari koordinat latitude dan longitude berdasarkan alamat</p>
@@ -108,7 +104,6 @@
                         <input type="text" id="search-address" class="input" placeholder="Contoh: Jl. Sudirman Jakarta atau Mall Bandung">
                         <button class="button button-primary" onclick="searchCoordinates()">🔍 Cari</button>
                     </div>
-
                     <div id="coordinate-result" class="coordinate-result" style="display: none;">
                         <h4 style="margin-bottom: 12px; color: #166534;">Hasil Pencarian:</h4>
                         <div class="coordinate-display">
@@ -126,7 +121,6 @@
                             <button class="button button-secondary button-sm" onclick="openInMaps()">🗺️ Buka di Maps</button>
                         </div>
                     </div>
-
                     <div class="alert alert-info" style="margin-top: 16px;">
                         <h4 style="margin-bottom: 8px;">💡 Tips Pencarian:</h4>
                         <ul style="margin-left: 20px;">
@@ -199,7 +193,6 @@
                                 </code>
                             </div>
                         </div>
-
                         <div>
                             <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 8px;">WP (Weighted Product)</h3>
                             <p style="color: #6b7280; margin-bottom: 8px;">
@@ -249,118 +242,118 @@
                 </div>
                 <div id="criteria-inputs" class="grid grid-cols-2"></div>
                 <div style="display: flex; gap: 8px; margin-top: 16px;">
-                    <button type="submit" class="button button-primary" style="flex: N/A;">Tambah Lokasi</button>
+                    <button type="submit" class="button button-primary" style="flex: 1;">Tambah Lokasi</button>
                     <button type="button" class="button button-secondary" onclick="closeModal('add-location-modal')">Batal</button>
                 </div>
             </form>
-            </div>
         </div>
+    </div>
 
-        <!-- Add Criteria Modal -->
-        <div id="add-criteria-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <div class="modal-title">Tambah Kriteria Baru</div>
-                    <div class="modal-description">Masukkan detail kriteria penilaian baru</div>
+    <!-- Add Criteria Modal -->
+    <div id="add-criteria-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Tambah Kriteria Baru</div>
+                <div class="modal-description">Masukkan detail kriteria penilaian baru</div>
+            </div>
+            <form id="add-criteria-form">
+                <div class="form-group">
+                    <label class="label">ID Kriteria</label>
+                    <input type="text" id="criteria-id" class="input" placeholder="contoh: transportation" required>
                 </div>
-                <form id="add-criteria-form">
-                    <div class="form-group">
-                        <label class="label">ID Kriteria</label>
-                        <input type="text" id="criteria-id" class="input" placeholder="contoh: transportation" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="label">Nama Kriteria</label>
-                        <input type="text" id="criteria-name" class="input" placeholder="contoh: Transportasi" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="label">Bobot (0-1)</label>
-                        <input type="number" id="criteria-weight" class="input" step="0.01" min="0" max="1" placeholder="0.25" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="label">Tipe Kriteria</label>
-                        <select id="criteria-type" class="input" required>
-                            <option value="benefit">Benefit (Semakin tinggi semakin baik)</option>
-                            <option value="cost">Cost (Semakin rendah semakin baik)</option>
-                        </select>
-                    </div>
-                    <div style="display: flex; gap: 8px; margin-top: 16px;">
-                        <button type="submit" class="button button-primary" style="flex: 1;">Tambah Kriteria</button>
-                        <button class="button button-secondary" onclick="closeModal('add-criteria-modal')">Batal</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Edit Location Modal -->
-        <div id="edit-location-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <div class="modal-title">Edit Lokasi</div>
-                    <div class="modal-description">Ubah nama lokasi dan nilai kriteria</div>
+                <div class="form-group">
+                    <label class="label">Nama Kriteria</label>
+                    <input type="text" id="criteria-name" class="input" placeholder="contoh: Transportasi" required>
                 </div>
-                <form id="edit-location-form">
-                    <div class="form-group">
-                        <label class="label">Nama Lokasi</label>
-                        <input type="text" id="edit-location-name" class="input" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="label">Alamat Lengkap</label>
-                        <input type="text" id="edit-location-address" class="input" required>
-                    </div>
-                    <div class="grid grid-cols-2">
-                        <div class="form-group">
-                            <label class="label">Latitude</label>
-                            <input type="number" id="edit-location-latitude" class="input" step="0.000001" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="label">Longitude</label>
-                            <input type="number" id="edit-location-longitude" class="input" step="0.000001" required>
-                        </div>
-                    </div>
-                    <div id="edit-criteria-inputs" class="grid grid-cols-2"></div>
-                    <div style="display: flex; gap: 8px; margin-top: 16px;">
-                        <button type="submit" class="button button-primary" style="flex: 1;">Simpan Perubahan</button>
-                        <button type="button" class="button button-secondary" onclick="closeModal('edit-location-modal')">Batal</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Edit Criteria Modal -->
-        <div id="edit-criteria-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <div class="modal-title">Edit Kriteria</div>
-                    <div class="modal-description">Ubah detail kriteria penilaian</div>
+                <div class="form-group">
+                    <label class="label">Bobot (0-1)</label>
+                    <input type="number" id="criteria-weight" class="input" step="0.01" min="0" max="1" placeholder="0.25" required>
                 </div>
-                <form id="edit-criteria-form">
-                    <div class="form-group">
-                        <label class="label">ID Kriteria</label>
-                        <input type="text" id="edit-criteria-id" class="input" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="label">Nama Kriteria</label>
-                        <input type="text" id="edit-criteria-name" class="input" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="label">Bobot (0-1)</label>
-                        <input type="number" id="edit-criteria-weight" class="input" step="0.01" min="0" max="1" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="label">Tipe Kriteria</label>
-                        <select id="edit-criteria-type" class="input" required>
-                            <option value="benefit">Benefit (Semakin tinggi semakin baik)</option>
-                            <option value="cost">Cost (Semakin rendah semakin baik)</option>
-                        </select>
-                    </div>
-                    <div style="display: flex; gap: 8px; margin-top: 16px;">
-                        <button type="submit" class="button button-primary" style="flex: 1;">Simpan Perubahan</button>
-                        <button type="button" class="button button-secondary" onclick="closeModal('edit-criteria-modal')">Batal</button>
-                    </div>
-                </form>
-            </div>
+                <div class="form-group">
+                    <label class="label">Tipe Kriteria</label>
+                    <select id="criteria-type" class="input" required>
+                        <option value="benefit">Benefit (Semakin tinggi semakin baik)</option>
+                        <option value="cost">Cost (Semakin rendah semakin baik)</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 16px;">
+                    <button type="submit" class="button button-primary" style="flex: 1;">Tambah Kriteria</button>
+                    <button class="button button-secondary" onclick="closeModal('add-criteria-modal')">Batal</button>
+                </div>
+            </form>
         </div>
+    </div>
 
-        <script src="./script.js"></script>
-    </body>
+    <!-- Edit Location Modal -->
+    <div id="edit-location-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Edit Lokasi</div>
+                <div class="modal-description">Ubah nama lokasi dan nilai kriteria</div>
+            </div>
+            <form id="edit-location-form">
+                <div class="form-group">
+                    <label class="label">Nama Lokasi</label>
+                    <input type="text" id="edit-location-name" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label class="label">Alamat Lengkap</label>
+                    <input type="text" id="edit-location-address" class="input" required>
+                </div>
+                <div class="grid grid-cols-2">
+                    <div class="form-group">
+                        <label class="label">Latitude</label>
+                        <input type="number" id="edit-location-latitude" class="input" step="0.000001" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">Longitude</label>
+                        <input type="number" id="edit-location-longitude" class="input" step="0.000001" required>
+                    </div>
+                </div>
+                <div id="edit-criteria-inputs" class="grid grid-cols-2"></div>
+                <div style="display: flex; gap: 8px; margin-top: 16px;">
+                    <button type="submit" class="button button-primary" style="flex: 1;">Simpan Perubahan</button>
+                    <button type="button" class="button button-secondary" onclick="closeModal('edit-location-modal')">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Criteria Modal -->
+    <div id="edit-criteria-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Edit Kriteria</div>
+                <div class="modal-description">Ubah detail kriteria penilaian</div>
+            </div>
+            <form id="edit-criteria-form">
+                <div class="form-group">
+                    <label class="label">ID Kriteria</label>
+                    <input type="text" id="edit-criteria-id" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label class="label">Nama Kriteria</label>
+                    <input type="text" id="edit-criteria-name" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label class="label">Bobot (0-1)</label>
+                    <input type="number" id="edit-criteria-weight" class="input" step="0.01" min="0" max="1" required>
+                </div>
+                <div class="form-group">
+                    <label class="label">Tipe Kriteria</label>
+                    <select id="edit-criteria-type" class="input" required>
+                        <option value="benefit">Benefit (Semakin tinggi semakin baik)</option>
+                        <option value="cost">Cost (Semakin rendah semakin baik)</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 16px;">
+                    <button type="submit" class="button button-primary" style="flex: 1;">Simpan Perubahan</button>
+                    <button type="button" class="button button-secondary" onclick="closeModal('edit-criteria-modal')">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="./script.js"></script>
+</body>
 </html>
